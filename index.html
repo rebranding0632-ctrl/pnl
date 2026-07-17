@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JOKER MASTER ADMIN - V10 ULTIMATE</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --neon-red: #FF0000; --glow-red: rgba(255, 0, 0, 0.7); --dark-bg: #020202; --card-bg: rgba(15, 15, 15, 0.95); --text-gold: #FFD700; --text-white: #FFFFFF; --success: #00FF88; --info-blue: #00E5FF; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--dark-bg); background-image: linear-gradient(to bottom, #1a0000 0%, #020202 100%); color: var(--text-white); font-family: 'Rajdhani', sans-serif; overflow-x: hidden; padding-bottom: 100px; }
+        .container { width: 100%; max-width: 500px; margin: 0 auto; padding: 15px; }
+        #loginOverlay { position: fixed; inset: 0; background: var(--dark-bg); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .login-card { background: var(--card-bg); padding: 40px 25px; border: 2px solid var(--neon-red); border-radius: 25px; text-align: center; width: 100%; max-width: 350px; box-shadow: 0 0 40px var(--glow-red); }
+        header { background: rgba(0,0,0,0.9); backdrop-filter: blur(15px); padding: 20px 15px; text-align: center; border-bottom: 3px solid var(--neon-red); position: sticky; top: 0; z-index: 100; }
+        header h1 { font-family: 'Orbitron'; font-size: 1.4rem; color: var(--neon-red); }
+        .tabs-nav { display: flex; gap: 4px; margin: 15px 0; background: #000; padding: 5px; border-radius: 12px; border: 1px solid #333; }
+        .tab-btn { flex: 1; background: transparent; border: none; color: #555; padding: 14px 2px; cursor: pointer; border-radius: 10px; font-size: 0.6rem; font-family: 'Orbitron'; font-weight: 700; transition: 0.4s; }
+        .tab-btn.active { background: var(--neon-red); color: white; box-shadow: 0 0 20px var(--glow-red); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: zoomIn 0.3s ease-out; }
+        @keyframes zoomIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .card { background: var(--card-bg); border-radius: 20px; border: 1px solid #222; padding: 18px; margin-bottom: 20px; }
+        .card-title { color: var(--text-gold); font-size: 0.85rem; margin-bottom: 15px; border-left: 4px solid var(--neon-red); padding-left: 10px; font-family: 'Orbitron'; }
+        input, select { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 12px; margin-bottom: 10px; font-size: 14px; outline: none; }
+        .btn-main { background: linear-gradient(135deg, #d32f2f, #ff1744); color: white; border: none; padding: 15px; border-radius: 12px; font-weight: 900; width: 100%; cursor: pointer; font-family: 'Orbitron'; font-size: 0.8rem; }
+        .slot-box { background: #080808; border-radius: 15px; padding: 15px; border: 1px solid #1a1a1a; margin-bottom: 15px; position: relative; }
+        .slot-tag { font-size: 0.65rem; color: #444; font-weight: 900; margin-bottom: 10px; display: block; font-family: 'Orbitron'; }
+        .active-file { border-left: 3px solid #00FF88; padding-left: 12px; }
+        .active-file h4 { font-size: 1.1rem; color: #fff; margin-bottom: 5px; }
+        .active-file p { font-size: 0.55rem; color: #555; word-break: break-all; margin-bottom: 10px; }
+        .btn-wipe { background: #d32f2f; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 0.65rem; font-family: 'Orbitron'; cursor: pointer; width: 100%; margin-top: 10px; font-weight: bold; }
+        .key-box { background: #0a0a0a; border: 1px solid #222; border-radius: 15px; padding: 15px; margin-bottom: 15px; border-right: 4px solid var(--neon-red); }
+        #globalStatus { position: fixed; bottom: 20px; left: 20px; right: 20px; background: rgba(0,0,0,0.95); border: 2px solid var(--neon-red); color: white; padding: 18px; border-radius: 15px; text-align: center; z-index: 3000; display: none; font-family: 'Orbitron'; box-shadow: 0 0 30px var(--glow-red); }
+        #progressOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 4000; display: none; align-items: center; justify-content: center; flex-direction: column; }
+        .ring { width: 100px; height: 100px; border-radius: 50%; border: 8px solid #222; border-top-color: red; animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+<div id="loginOverlay"><div class="login-card"><h2 style="font-family:'Orbitron'; color:red;">JOKER LOGIN</h2><input type="password" id="adminAccessKey" placeholder="PASSWORD" style="text-align:center; margin-top:20px;"><button class="btn-main" onclick="validateAdmin()">UNLOCK</button></div></div>
+<div id="progressOverlay"><div class="ring"></div><p id="pVal" style="margin-top:20px; color:white; font-family:'Orbitron'; font-size:1.2rem;">0%</p></div>
+<div id="mainDashboard" style="display:none;"><header><h1>🤡 MASTER CONTROL</h1><div id="adminTimer" style="color:gold; font-size:0.75rem; margin-top:5px;">---</div></header>
+<div class="container"><div class="tabs-nav"><button class="tab-btn active" onclick="openTab('keysTab', this)">KEYS</button><button class="tab-btn" onclick="openTab('luaTab', this)">LUA</button><button class="tab-btn" onclick="openTab('obbTab', this)">OBB</button><button class="tab-btn" onclick="openTab('noticeTab', this)">NOTICE</button></div>
+
+<div id="keysTab" class="tab-content active">
+    <div class="card"><div class="card-title">GENERATE TOKEN</div>
+    <input type="text" id="usernameBase" placeholder="USER NAME"><input type="text" id="customKey" placeholder="OR CUSTOM NAME">
+    <div style="display:flex; align-items:center; gap:10px; background:#0a0a0a; padding:8px; border-radius:12px; border:1px solid #222; margin-bottom:12px;"><span style="flex:1;font-size:0.65rem;color:#666;font-family:'Orbitron'">DEVICE LIMIT</span><input type="number" id="deviceLimit" style="width:80px; margin:0; text-align:center; color:red; font-weight:900;" value="1"></div>
+    <div style="display:flex; align-items:center; gap:10px; background:#0a0a0a; padding:8px; border-radius:12px; border:1px solid #222; margin-bottom:12px;"><span style="flex:1;font-size:0.65rem;color:#666;font-family:'Orbitron'">DURATION</span><input type="number" id="durationValue" style="width:80px; margin:0; text-align:center; color:red; font-weight:900;" value="1"><select id="durationUnit" style="flex:1; margin-left:10px; height:38px;"><option value="hours">HOURS</option><option value="days" selected>DAYS</option><option value="months">MONTHS</option><option value="lifetime">LIFE</option></select></div>
+    <div style="background:rgba(255,215,0,0.05); padding:10px; border:1px dashed gold; border-radius:10px; margin-bottom:15px; cursor:pointer;" onclick="document.getElementById('isVip').click()"><input type="checkbox" id="isVip" style="width:18px;height:18px;"> <span style="color:gold;font-family:'Orbitron';font-size:0.7rem;margin-left:10px;">ENABLE VIP STATUS 👑</span></div>
+    <button class="btn-main" onclick="generateKey()">CREATE KEY ⚡</button></div>
+    <div id="keysList"></div>
+</div>
+
+<div id="luaTab" class="tab-content"><div id="luaSlotsContainer"></div><h3 style="color:cyan; margin:20px 0 10px 0; font-family:'Orbitron'; font-size:0.8rem;">IN TOOL LIST</h3><div id="luaAppList"></div></div>
+<div id="obbTab" class="tab-content"><div id="obbSlotsContainer"></div><h3 style="color:cyan; margin:20px 0 10px 0; font-family:'Orbitron'; font-size:0.8rem;">IN TOOL LIST</h3><div id="obbAppList"></div></div>
+
+<div id="noticeTab" class="tab-content"><div class="card"><div class="card-title">GLOBAL ALERT</div><input type="text" id="noticeTitle" placeholder="TITLE"><textarea id="noticeMessage" rows="5" placeholder="MESSAGE..."></textarea><div style="display:flex; gap:10px;"><button class="btn-main" onclick="publishNotice()" style="flex:1;">PUBLISH</button><button class="btn-main" onclick="stopNotices()" style="flex:1; background:#222; color:red; border:1px solid red;">STOP</button></div></div></div>
+
+<div class="card" style="background:#1a0000; border-color:red;"><div class="card-title" style="color:red; font-size:0.7rem;">MASTER SETTINGS</div><input type="text" id="ghBranch" placeholder="Branch" value="main"><input type="password" id="ghToken" placeholder="GitHub Token"><button class="btn-main" style="background:#333;" onclick="saveGhConfig()">SAVE</button></div></div></div>
+<div id="globalStatus"></div>
+<script>
+    const SB_URL = "https://lqilqrytzaefxxbzdlqw.supabase.co";
+    const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxaWxxcnl0emFlZnh4YnpkbHF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQxMzE3MTAsImV4cCI6MjA5OTcwNzcxMH0.sxmpaTDkqK5vyHYWfOfdzbc9sU8e52RWVCv-30-7Wuw";
+    const _supabase = supabase.createClient(SB_URL, SB_KEY);
+    async function validateAdmin() {
+        const key = document.getElementById('adminAccessKey').value.trim();
+        const { data } = await _supabase.from('admin_access').select('*').eq('admin_key', key);
+        if(data && data.length > 0) { localStorage.setItem('admin_session_key', key); document.getElementById('loginOverlay').style.display='none'; document.getElementById('mainDashboard').style.display='block'; startSessionTimer(data[0].expires_at); loadGhConfig(); fetchAll(); }
+    }
+    function startSessionTimer(expiry) { if(!expiry) { document.getElementById('adminTimer').innerText="LIFETIME"; return; } setInterval(()=>{ const diff=new Date(expiry).getTime()-new Date().getTime(); const h=Math.floor(diff/3600000); document.getElementById('adminTimer').innerText=`EXPIRES: ${Math.floor(h/24)}d ${h%24}h ${Math.floor((diff%3600000)/60000)}m`; },1000); }
+    async function fetchAll() {
+        const lua = await _supabase.from('config').select('*').order('slot_no'); const obb = await _supabase.from('obb_config').select('*').order('slot_no');
+        renderSlots('lua', lua.data||[]); renderSlots('obb', obb.data||[]);
+        renderAppList('lua', lua.data||[]); renderAppList('obb', obb.data||[]);
+        fetchKeys();
+    }
+    function renderSlots(type, appData) {
+        const container = document.getElementById(type + 'SlotsContainer'); container.innerHTML = "";
+        for(let i=1; i<=5; i++) {
+            const active = appData.find(item => item.slot_no === i);
+            const slotId = `${type}_${i}`; const savedRepo = localStorage.getItem('repo_'+slotId)||"";
+            container.innerHTML += `<div class="slot-box"><span class="slot-tag">${type.toUpperCase()} SLOT 0${i}</span>` +
+                (active ? `<div class="active-file"><h4>${active.name}</h4><p style="font-size:0.55rem;color:#444;word-break:break-all;">${active.download_url}</p><button class="btn-wipe" onclick="killFull('${type}', ${i}, ${active.id}, '${active.download_url}')">WIPE SERVER & TOOL 🗑️</button></div>` :
+                `<input type="text" id="repo_${slotId}" placeholder="User/Repo" value="${savedRepo}" onchange="localStorage.setItem('repo_${slotId}',this.value.trim())"><input type="text" id="name_${slotId}" placeholder="App Name"><input type="file" id="file_${slotId}"><button class="btn-main" style="padding:10px; font-size:0.7rem;" onclick="handleUpload('${type}', ${i})">UPLOAD ROOT ☁️</button>`);
+        }
+    }
+    function renderAppList(type, data) {
+        const container = document.getElementById(type + 'AppList');
+        container.innerHTML = data.map(item => `<div class="card" style="padding:15px; margin-bottom:10px; border-left:3px solid cyan;"><b>${item.name}</b><button onclick="killFull('${type}', ${item.slot_no||0}, ${item.id}, '${item.download_url}')" style="float:right; color:red; background:none; border:none; font-weight:bold;">WIPE FULL</button></div>`).join('') || "Empty";
+    }
+    async function handleUpload(type, slot) {
+        const id=`${type}_${slot}`, token=localStorage.getItem('gh_token'), repo=document.getElementById('repo_'+id).value.trim(), name=document.getElementById('name_'+id).value.trim(), fileInput=document.getElementById('file_'+id), branch=localStorage.getItem('gh_branch')||"main";
+        if(!token||!repo||!name||!fileInput.files[0]) return alert("Fill all fields!");
+        document.getElementById('progressOverlay').style.display='flex';
+        const file = fileInput.files[0]; const reader = new FileReader(); reader.readAsArrayBuffer(file);
+        reader.onload = async function() {
+            try {
+                const bytes=new Uint8Array(reader.result); let binary=''; for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+                const base64=window.btoa(binary); const fileName = file.name.replace(/\s+/g, '_');
+                const ghUrl=`https://api.github.com/repos/${repo}/contents/${fileName}`;
+
+                let sha = ""; const check = await fetch(ghUrl,{headers:{'Authorization':`token ${token}`}});
+                if(check.ok){ const m = await check.json(); sha = m.sha; }
+
+                const res = await fetch(ghUrl, { method:'PUT', headers:{'Authorization':`token ${token}`}, body:JSON.stringify({message:"Joker",content:base64, sha:sha, branch:branch}) });
+                if(res.ok) {
+                    const rawUrl=`https://raw.githubusercontent.com/${repo}/${branch}/${fileName}?t=${Date.now()}`;
+                    // Fixed: Removed is_active from insert as it's causing error
+                    const { error } = await _supabase.from(type==='lua'?'config':'obb_config').insert([{ name, download_url: rawUrl, version: type.toUpperCase(), slot_no: slot }]);
+                    if(error) alert("DB ERROR: " + error.message);
+                    else { showStatus("✅ ACTIVATED!", "green"); fetchAll(); }
+                } else showStatus("❌ GITHUB FAILED", "red");
+            } catch (e) { alert("Error: "+e.message); }
+            document.getElementById('progressOverlay').style.display='none';
+        };
+    }
+    async function killFull(type, slot, id, rawUrl) {
+        if(!confirm("WIPE SERVER & TOOL?")) return;
+        const token = localStorage.getItem('gh_token'), branch = localStorage.getItem('gh_branch') || "main", repo = slot > 0 ? localStorage.getItem('repo_'+`${type}_${slot}`) : rawUrl.split('raw.githubusercontent.com/')[1].split('/').slice(0, 2).join('/');
+        await _supabase.from(type==='lua'?'config':'obb_config').delete().eq('id', id);
+        if(token && repo && rawUrl) {
+            const fileName = rawUrl.split('/').pop().split('?')[0];
+            const ghUrl = `https://api.github.com/repos/${repo}/contents/${fileName}`;
+            const check = await fetch(ghUrl,{headers:{'Authorization':`token ${token}`}});
+            if(check.ok){const m=await check.json(); await fetch(ghUrl, { method:'DELETE', headers:{'Authorization':`token ${token}`}, body:JSON.stringify({message:"Clean",sha:m.sha, branch:branch}) });}
+        }
+        fetchAll();
+    }
+    async function generateKey() {
+        const u = document.getElementById('usernameBase').value.toUpperCase();
+        let k = document.getElementById('customKey').value.toUpperCase() || (u ? u+'-'+Math.random().toString(36).substring(2,6).toUpperCase() : 'JOKER-'+Math.random().toString(36).substring(2,10).toUpperCase());
+        const lim = parseInt(document.getElementById('deviceLimit').value)||1, val = parseInt(document.getElementById('durationValue').value)||1, unit = document.getElementById('durationUnit').value, vip = document.getElementById('isVip').checked;
+        let exp = null; if(unit !== 'lifetime') { let d = new Date(); if(unit === 'hours') d.setHours(d.getHours()+val); else if(unit === 'days') d.setDate(d.getDate()+val); else if(unit === 'months') d.setMonth(d.getMonth()+val); exp = d.toISOString(); }
+        await _supabase.from('keys').insert([{ key: k, device_limit: lim, expires_at: exp, is_vip: vip }]); fetchKeys();
+    }
+    async function fetchKeys() {
+        const { data } = await _supabase.from('keys').select('*').order('created_at', { ascending: false });
+        const list = document.getElementById('keysList'); list.innerHTML = data.map(item => `
+            <div class="key-box">
+                <div style="font-weight:bold; font-size:1.1rem;">${item.key} ${item.is_vip?'👑':''}</div>
+                <div style="font-size:0.7rem; color:#888;">USE: ${item.device_ids?item.device_ids.split(',').filter(x=>x).length:0}/${item.device_limit} | EXP: ${item.expires_at?new Date(item.expires_at).toLocaleDateString():'LIFE'}</div>
+                <div style="display:flex; gap:5px; margin-top:10px;"><button class="btn-sml" style="background:#333;" onclick="copyKey('${item.key}')">COPY</button><button class="btn-sml" style="background:#1976D2;" onclick="resetKey(${item.id})">RESET</button><button class="btn-sml" style="background:red;" onclick="delKey(${item.id})">DEL</button></div>
+            </div>`).join('');
+    }
+    async function resetKey(id) { await _supabase.from('keys').update({ device_ids: null }).eq('id', id); fetchKeys(); }
+    async function delKey(id) { await _supabase.from('keys').delete().eq('id',id); fetchKeys(); }
+    function copyKey(t) { navigator.clipboard.writeText(t); showStatus("COPIED!", "gold"); }
+    function showStatus(msg,col){const s=document.getElementById('globalStatus');s.innerText=msg;s.style.display='block';s.style.borderLeft=`8px solid ${col}`;setTimeout(()=>s.style.display='none',4000);}
+    function saveGhConfig(){localStorage.setItem('gh_token', document.getElementById('ghToken').value); localStorage.setItem('gh_branch', document.getElementById('ghBranch').value); alert("Saved!");}
+    function loadGhConfig(){document.getElementById('ghToken').value = localStorage.getItem('gh_token') || ""; document.getElementById('ghBranch').value = localStorage.getItem('gh_branch') || "main";}
+    function openTab(t,b){document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active')); document.getElementById(t).classList.add('active'); b.classList.add('active'); }
+    function performLogout(){localStorage.removeItem('admin_session_key'); location.reload();}
+    async function publishNotice() { const t=document.getElementById('noticeTitle').value, m=document.getElementById('noticeMessage').value; await _supabase.from('admin_notices').update({ is_active: false }).neq('id', 0); await _supabase.from('admin_notices').insert([{ title: t, message: m, is_active: true }]); alert("Sent!"); }
+    async function stopNotices() { await _supabase.from('admin_notices').update({ is_active: false }).neq('id', 0); alert("Stopped!"); }
+</script>
+</body>
+</html>
